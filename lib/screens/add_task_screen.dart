@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
+import 'package:reminder_app/task.dart';
 import 'package:time_pickerr/time_pickerr.dart';
 
 class AddTaskScreen extends StatefulWidget {
@@ -9,15 +11,20 @@ class AddTaskScreen extends StatefulWidget {
 }
 
 class _AddTaskScreenState extends State<AddTaskScreen> {
-  FocusNode tasktitlecontroller = FocusNode();
-  FocusNode taskcontentcontroller = FocusNode();
+  FocusNode focusnodetitle = FocusNode();
+  FocusNode focusnodesubtitle = FocusNode();
+  TextEditingController titlecontroller = TextEditingController();
+  TextEditingController subtitlecontroller = TextEditingController();
+  DateTime? _time;
+  final box = Hive.box<Task>('taskbox');
+
   @override
   void initState() {
     super.initState();
-    tasktitlecontroller.addListener(() {
+    focusnodetitle.addListener(() {
       setState(() {});
     });
-    taskcontentcontroller.addListener(() {
+    focusnodesubtitle.addListener(() {
       setState(() {});
     });
   }
@@ -56,7 +63,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                       ),
-                      focusNode: tasktitlecontroller,
+                      focusNode: focusnodetitle,
+                      controller: titlecontroller,
                       decoration: InputDecoration(
                         label: const Text(
                           'Task title',
@@ -93,7 +101,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                       ),
                       keyboardType: TextInputType.text,
                       maxLines: 2,
-                      focusNode: taskcontentcontroller,
+                      focusNode: focusnodesubtitle,
+                      controller: subtitlecontroller,
                       decoration: InputDecoration(
                         label: const Text(
                           'Task content',
@@ -125,7 +134,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                     CustomHourPicker(
                       elevation: 2,
                       onPositivePressed: (context, time) {
-                        print('onPositive');
+                        _time = time;
+                        print('${time.hour}:${time.minute}');
                       },
                       onNegativePressed: (context) {
                         print('onNegative');
@@ -140,7 +150,9 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                           borderRadius: BorderRadius.circular(15),
                         ),
                       ),
-                      onPressed: () {},
+                      onPressed: () {
+                        addtask(titlecontroller.text, subtitlecontroller.text);
+                      },
                       child: const Text(
                         'Add task',
                         style: TextStyle(
@@ -158,5 +170,14 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         ),
       ),
     );
+  }
+
+  void addtask(String title, String subtitle) {
+    var task = Task(
+      title: title,
+      subtitle: subtitle,
+      time: _time!,
+    );
+    box.add(task);
   }
 }
