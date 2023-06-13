@@ -5,18 +5,18 @@ import 'package:reminder_app/utility/utility.dart';
 import 'package:reminder_app/widgets/task_type_item.dart';
 import 'package:time_pickerr/time_pickerr.dart';
 
-class AddTaskScreen extends StatefulWidget {
-  const AddTaskScreen({super.key});
-
+class EditTaskScreen extends StatefulWidget {
+  const EditTaskScreen({required this.task, super.key});
+  final Task task;
   @override
-  State<AddTaskScreen> createState() => _AddTaskScreenState();
+  State<EditTaskScreen> createState() => _EditTaskScreenState();
 }
 
-class _AddTaskScreenState extends State<AddTaskScreen> {
+class _EditTaskScreenState extends State<EditTaskScreen> {
   FocusNode focusnodetitle = FocusNode();
   FocusNode focusnodesubtitle = FocusNode();
-  TextEditingController titlecontroller = TextEditingController();
-  TextEditingController subtitlecontroller = TextEditingController();
+  TextEditingController? titlecontroller;
+  TextEditingController? subtitlecontroller;
   DateTime? _time;
   final box = Hive.box<Task>('taskbox');
   int _selecteditemindex = 0;
@@ -24,12 +24,18 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   @override
   void initState() {
     super.initState();
+    titlecontroller = TextEditingController(text: widget.task.title);
+    subtitlecontroller = TextEditingController(text: widget.task.subtitle);
     focusnodetitle.addListener(() {
       setState(() {});
     });
     focusnodesubtitle.addListener(() {
       setState(() {});
     });
+    var index = gettasktypelist().indexWhere((element) {
+      return element.tasktypeenum == widget.task.tasktype.tasktypeenum;
+    });
+    _selecteditemindex = index;
   }
 
   @override
@@ -38,7 +44,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       appBar: AppBar(
         backgroundColor: Colors.black,
         title: const Text(
-          'Add Task',
+          'Edit Task',
           style: TextStyle(
             fontSize: 25,
             fontWeight: FontWeight.bold,
@@ -69,7 +75,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                       controller: titlecontroller,
                       decoration: InputDecoration(
                         label: const Text(
-                          'Task title',
+                          'task title',
                           style: TextStyle(
                             fontSize: 25,
                             color: Colors.white,
@@ -174,7 +180,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                         ),
                       ),
                       onPressed: () {
-                        addtask(titlecontroller.text, subtitlecontroller.text);
+                        edittask(
+                            titlecontroller!.text, subtitlecontroller!.text);
                         Navigator.pop(context);
                       },
                       child: const Text(
@@ -199,13 +206,11 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     );
   }
 
-  void addtask(String title, String subtitle) {
-    var task = Task(
-      title: title,
-      subtitle: subtitle,
-      time: _time!,
-      tasktype: gettasktypelist()[_selecteditemindex],
-    );
-    box.add(task);
+  void edittask(String title, String subtitle) {
+    widget.task.title = title;
+    widget.task.subtitle = subtitle;
+    widget.task.time = _time!;
+    widget.task.tasktype = gettasktypelist()[_selecteditemindex];
+    widget.task.save();
   }
 }

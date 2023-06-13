@@ -1,15 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
+import 'package:flutter/rendering.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:reminder_app/screens/add_task_screen.dart';
-import 'package:reminder_app/task.dart';
-import 'package:roundcheckbox/roundcheckbox.dart';
+import 'package:reminder_app/model/task.dart';
+import 'package:reminder_app/widgets/task_item.dart';
 
-class MainScreen extends StatelessWidget {
+class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
 
   @override
+  State<MainScreen> createState() => _MainScreenState();
+}
+
+class _MainScreenState extends State<MainScreen> {
+  bool isfabvisible = true;
+  @override
   Widget build(BuildContext context) {
     var taskbox = Hive.box<Task>('taskbox');
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -25,180 +33,55 @@ class MainScreen extends StatelessWidget {
         color: Colors.black,
         child: Stack(
           children: [
-            ListView.builder(
-              itemCount: taskbox.length,
-              itemBuilder: (BuildContext context, int index) {
-                var tasks = taskbox.values.toList()[index];
-                return _taskitem(task: tasks);
+            ValueListenableBuilder(
+              valueListenable: taskbox.listenable(),
+              builder: (context, value, child) {
+                return NotificationListener<UserScrollNotification>(
+                  onNotification: (notification) {
+                    setState(() {
+                      if (notification.direction == ScrollDirection.forward) {
+                        isfabvisible = true;
+                      }
+                      if (notification.direction == ScrollDirection.reverse) {
+                        isfabvisible = false;
+                      }
+                    });
+                    return true;
+                  },
+                  child: ListView.builder(
+                    itemCount: taskbox.length,
+                    itemBuilder: (BuildContext context, int index) {
+                      var tasks = taskbox.values.toList()[index];
+                      return Dismissible(
+                          key: UniqueKey(),
+                          onDismissed: (direction) {
+                            taskbox.values.toList()[index].delete();
+                          },
+                          child: TaskItem(task: tasks));
+                    },
+                  ),
+                );
               },
             ),
             Positioned(
               right: 40,
               bottom: 80,
-              child: FloatingActionButton(
-                backgroundColor: Colors.amber,
-                splashColor: Colors.red,
-                onPressed: () {
-                  Navigator.of(context).push(_createRoute());
-                },
-                child: const Icon(
-                  Icons.add,
-                  size: 40,
+              child: Visibility(
+                visible: isfabvisible,
+                child: FloatingActionButton(
+                  backgroundColor: Colors.amber,
+                  splashColor: Colors.red,
+                  onPressed: () {
+                    Navigator.of(context).push(_createRoute());
+                  },
+                  child: const Icon(
+                    Icons.add,
+                    size: 40,
+                  ),
                 ),
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _taskitem extends StatelessWidget {
-  _taskitem({
-    required this.task,
-    super.key,
-  });
-  Task task;
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 20,
-        vertical: 20,
-      ),
-      child: Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.all(
-            Radius.circular(15),
-          ),
-        ),
-        height: 150,
-        width: double.infinity,
-        child: Padding(
-          padding: const EdgeInsets.all(5),
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.only(right: 100),
-                          child: RoundCheckBox(
-                            checkedColor: Colors.black,
-                            onTap: (ontap) {},
-                          ),
-                        ),
-                        Column(
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 20),
-                              child: SizedBox(
-                                width: 130,
-                                height: 30,
-                                child: Text(
-                                  task.title,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontSize: 25,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            SizedBox(
-                              width: 130,
-                              height: 30,
-                              child: Text(
-                                task.subtitle,
-                                style: const TextStyle(fontSize: 20),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        )
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        Container(
-                          margin: const EdgeInsets.only(right: 25),
-                          height: 30,
-                          width: 110,
-                          decoration: BoxDecoration(
-                            color: Colors.black,
-                            borderRadius: BorderRadius.circular(15),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                            child: Row(
-                              children: [
-                                Text(
-                                  '${task.time.hour} : ${task.time.minute}',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const Spacer(),
-                                const Icon(
-                                  Icons.schedule,
-                                  color: Colors.white,
-                                )
-                              ],
-                            ),
-                          ),
-                        ),
-                        Container(
-                          margin: const EdgeInsets.only(right: 25),
-                          height: 30,
-                          width: 110,
-                          decoration: BoxDecoration(
-                            color: const Color.fromARGB(255, 71, 69, 69),
-                            borderRadius: BorderRadius.circular(15),
-                          ),
-                          child: const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 12),
-                            child: Row(
-                              children: [
-                                Text(
-                                  'Edit',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                Spacer(),
-                                Icon(
-                                  Icons.edit,
-                                  color: Colors.white,
-                                )
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(left: 10),
-                  child: SizedBox(
-                      height: 60,
-                      width: 60,
-                      child: Image.asset('assets/images/sport.gif')),
-                ),
-              ],
-            ),
-          ),
         ),
       ),
     );

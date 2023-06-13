@@ -1,4 +1,5 @@
 import 'package:hive/hive.dart';
+import 'package:reminder_app/model/task_type.dart';
 part 'task.g.dart';
 
 @HiveType(typeId: 1)
@@ -11,10 +12,13 @@ class Task extends HiveObject {
   bool isdone;
   @HiveField(3)
   DateTime time;
+  @HiveField(4)
+  TaskType tasktype;
   Task({
     required this.title,
     required this.subtitle,
     this.isdone = false,
     required this.time,
+    required this.tasktype,
   });
 }
